@@ -1,0 +1,17 @@
+[package]
+name = "did_profiles"
+version = "0.1.0"
+authors = ["jdeepee <joshuadparkin@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "did_profiles"
+
+[dependencies]
+did_doc = { git = "https://github.com/dhuseby/did" }
+derive_more = "0"
+serde = "1"
+
+hdk3 = "0"
+hc_utils = "0"
