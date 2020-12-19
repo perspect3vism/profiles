@@ -10,6 +10,7 @@ use hc_utils::WrappedAgentPubKey;
 use hdk3::prelude::*;
 use std::collections::BTreeMap;
 
+mod did_validation;
 mod profile;
 mod utils;
 
@@ -86,7 +87,7 @@ pub struct RegisterDidInput {
 /// Register a DID in the DHT
 #[hdk_extern]
 pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
-    Ok(())
+    profile::register_did(register_did)
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes)]
