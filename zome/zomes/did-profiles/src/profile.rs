@@ -8,12 +8,20 @@ use secp256k1::Secp256k1;
 use std::str::FromStr;
 
 use crate::utils::err;
-use crate::{AddProfile, CreateProfileInput, DidInput, RegisterDidInput, UpdateProfileInput, DidDocument};
+use crate::{AddProfile, CreateProfileInput, DidInput, RegisterDidInput, UpdateProfileInput, DidDocument, Did, Profile};
 
 pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     //Check that did is of valid syntax
     Uri::from_str(&create_data.did)
         .map_err(|did_err| err(format!("{}", did_err.kind()).as_ref()))?;
+
+    //Check that did is not already in the DHT
+    let did = Did(create_data.did);
+    let did_hash = hash_entry(&did)?;
+    let did_check = get(did_hash.clone(), GetOptions)?;
+    if did_check.is_none() {
+        return Err(err("Did already exists please add profile using the add_profile function"))
+    };
 
     //Look for pub keys are of the type and encoding that we support (Ed25519VerificationKey2018 base58 & EcdsaSecp256k1VerificationKey2019 hex)
     let pub_key = create_data.did_document.public_key().iter().find(|key| {
@@ -86,10 +94,24 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     }
 
     //Add did entry
+    create_entry(&did)?;
+
     //Add document entry
+    let did_doc = DidDocument(create_data.did_document);
+    let did_doc_hash = hash_entry(&did_doc)?;
+    create_entry(&did_doc)?;
+
     //Link document entry to did
+    create_link(did_hash.clone(), did_doc_hash, LinkTag::from("doc".as_bytes().to_owned()))?;
+
     //Add profile entry
+    let did_profile = Profile(create_data.profile);
+    let did_profile_hash = hash_entry(&did_profile)?;
+    create_entry(&did_profile)?;
+    
     //Link profile entry to did
+    create_link(did_hash, did_profile_hash, LinkTag::from("profile".as_bytes().to_owned()))?;
+
     Ok(())
 }
 
