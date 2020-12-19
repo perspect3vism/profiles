@@ -1,13 +1,13 @@
+use did_doc::Uri;
 use hc_utils::{get_header, get_latest_entry, get_latest_link};
 use hdk3::prelude::*;
-use did_doc::Uri;
 use std::str::FromStr;
 
 use crate::did_validation::validate_did_doc;
 use crate::utils::{did_validate_and_check_integrity, err, try_from_entry};
 use crate::{
-    AddProfile, CreateProfileInput, DidDocument, DidInput, Profile, RegisterDidInput,
-    UpdateProfileInput, Did
+    AddProfile, CreateProfileInput, Did, DidDocument, DidInput, Profile, RegisterDidInput,
+    UpdateProfileInput,
 };
 
 pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
@@ -90,7 +90,7 @@ pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
     let did = Did(did.0);
     let did_hash = hash_entry(&did)?;
     if get(did_hash.clone(), GetOptions)?.is_none() {
-        return Ok(None)
+        return Ok(None);
     };
 
     let profile_links = get_latest_link(

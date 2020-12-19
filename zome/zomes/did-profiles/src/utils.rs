@@ -12,7 +12,10 @@ pub fn err(reason: &str) -> HdkError {
     HdkError::Wasm(WasmError::Zome(String::from(reason)))
 }
 
-pub fn did_validate_and_check_integrity(did: &String, should_exist: bool) -> ExternResult<(Did, EntryHash)> {
+pub fn did_validate_and_check_integrity(
+    did: &String,
+    should_exist: bool,
+) -> ExternResult<(Did, EntryHash)> {
     //Check that did is of valid syntax
     Uri::from_str(did).map_err(|did_err| err(format!("{}", did_err.kind()).as_ref()))?;
 
@@ -31,7 +34,9 @@ pub fn did_validate_and_check_integrity(did: &String, should_exist: bool) -> Ext
         if did_check.is_none() {
             Ok((did, did_hash))
         } else {
-            Err(err("Given did already exists in the DHT. Expected a unique DID."))
+            Err(err(
+                "Given did already exists in the DHT. Expected a unique DID.",
+            ))
         }
     }
 }
