@@ -4,6 +4,8 @@
 //!
 //! This DNA currently contains a security hole as a result of the inability to do did document resolution for a given incoming did. This is a limit of holochain due to its sandboxed execution environment.
 //! As a result of this we have no way to tell if incoming DID/Document pair is actually from original DID owner or if the DID subject has been stolen and a new document forged.
+//! Note: a solution for this does exist. Solution involves having another network where a trusted node has some capacities built into its holochain execution sandbox such that it can resolve did's. 
+//! This network could be bridged and called to validate the integrity of any did subject/document pairs. TODO in the future.
 
 use did_doc::Document;
 use hc_utils::WrappedAgentPubKey;
@@ -31,9 +33,7 @@ entry_defs![
     Profile::entry_def()
 ];
 
-/** Profiles **/
-
-///Get agent information
+/// Get agent information
 #[hdk_extern]
 pub fn who_am_i(_: ()) -> ExternResult<WrappedAgentPubKey> {
     let agent_info = agent_info()?;
