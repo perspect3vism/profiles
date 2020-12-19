@@ -28,3 +28,13 @@ pub fn did_validate_and_check_integrity(did: &String) -> ExternResult<(Did, Entr
         Ok((did, did_hash))
     }
 }
+
+pub fn try_from_entry<T: TryFrom<SerializedBytes>>(entry: Entry) -> ExternResult<T> {
+    match entry {
+        Entry::App(content) => match T::try_from(content.into_sb()) {
+            Ok(e) => Ok(e),
+            Err(_) => error("Could not convert entry"),
+        },
+        _ => error("Could not convert entry"),
+    }
+}

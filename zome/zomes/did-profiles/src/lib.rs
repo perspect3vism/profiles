@@ -68,10 +68,13 @@ pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
 #[derive(Serialize, Deserialize, SerializedBytes)]
 pub struct DidInput(String);
 
+#[derive(Serialize, Deserialize, SerializedBytes)]
+pub struct GetProfileOutput(Option<BTreeMap<String, String>>);
+
 /// Get the profiles for a given DID
 #[hdk_extern]
-pub fn get_profile(did: DidInput) -> ExternResult<()> {
-    Ok(())
+pub fn get_profile(did: DidInput) -> ExternResult<GetProfileOutput> {
+    Ok(GetProfileOutput(profile::get_profile(did)?.map(|p| p.0)))
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes)]

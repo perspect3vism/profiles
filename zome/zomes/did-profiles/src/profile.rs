@@ -3,13 +3,13 @@ use did_doc::{
     Uri,
 };
 use ed25519_dalek::Verifier;
-use hc_utils::{get_header, get_latest_link};
+use hc_utils::{get_header, get_latest_entry, get_latest_link};
 use hdk3::prelude::*;
 use secp256k1::Secp256k1;
-use std::str::FromStr;
+use std::{collections::BTreeMap, str::FromStr};
 
-use crate::utils::{did_validate_and_check_integrity, err};
-use crate::{CreateProfileInput, DidDocument, Profile, UpdateProfileInput};
+use crate::utils::{did_validate_and_check_integrity, err, try_from_entry};
+use crate::{CreateProfileInput, DidDocument, DidInput, Profile, UpdateProfileInput};
 
 pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     //Validate did
@@ -134,6 +134,27 @@ pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
             Ok(())
         }
         None => Err(err("You have no profile to update")),
+    }
+}
+
+pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
+    //Validate did
+    let (_did, did_hash) = did_validate_and_check_integrity(&did.0)?;
+
+    let profile_links = get_latest_link(
+        did_hash,
+        Some(LinkTag::from("profile".as_bytes().to_owned())),
+    )
+    .map_err(|error| err(format!("{}", error).as_ref()))?;
+
+    match profile_links {
+        Some(link) => {
+            let entry = get_latest_entry(link.target, GetOptions)
+                .map_err(|error| err(format!("{}", error).as_ref()))?;
+
+            Ok(Some(try_from_entry::<Profile>(entry)?))
+        }
+        None => Ok(None),
     }
 }
 
