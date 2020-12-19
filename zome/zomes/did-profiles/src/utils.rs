@@ -12,20 +12,27 @@ pub fn err(reason: &str) -> HdkError {
     HdkError::Wasm(WasmError::Zome(String::from(reason)))
 }
 
-pub fn did_validate_and_check_integrity(did: &String) -> ExternResult<(Did, EntryHash)> {
+pub fn did_validate_and_check_integrity(did: &String, should_exist: bool) -> ExternResult<(Did, EntryHash)> {
     //Check that did is of valid syntax
     Uri::from_str(did).map_err(|did_err| err(format!("{}", did_err.kind()).as_ref()))?;
 
-    //Check that did is not already in the DHT
+    //Check for did in DHT
     let did = Did(did.clone());
     let did_hash = hash_entry(&did)?;
     let did_check = get(did_hash.clone(), GetOptions)?;
-    if did_check.is_none() {
-        Err(err(
-            "Did already exists please add profile using the add_profile function",
-        ))
+
+    if should_exist {
+        if did_check.is_some() {
+            Ok((did, did_hash))
+        } else {
+            Err(err("Given DID does not exist"))
+        }
     } else {
-        Ok((did, did_hash))
+        if did_check.is_none() {
+            Ok((did, did_hash))
+        } else {
+            Err(err("Given did already exists in the DHT. Expected a unique DID."))
+        }
     }
 }
 

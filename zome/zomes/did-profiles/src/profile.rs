@@ -1,16 +1,18 @@
 use hc_utils::{get_header, get_latest_entry, get_latest_link};
 use hdk3::prelude::*;
+use did_doc::Uri;
+use std::str::FromStr;
 
 use crate::did_validation::validate_did_doc;
 use crate::utils::{did_validate_and_check_integrity, err, try_from_entry};
 use crate::{
     AddProfile, CreateProfileInput, DidDocument, DidInput, Profile, RegisterDidInput,
-    UpdateProfileInput,
+    UpdateProfileInput, Did
 };
 
 pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     //Validate did
-    let (did, did_hash) = did_validate_and_check_integrity(&create_data.did)?;
+    let (did, did_hash) = did_validate_and_check_integrity(&create_data.did, false)?;
 
     //Validate incoming did document and its signed agent fields
     validate_did_doc(&create_data.did_document)?;
@@ -47,7 +49,7 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
 
 pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
     //Validate did
-    let (_did, did_hash) = did_validate_and_check_integrity(&update_profile.did)?;
+    let (_did, did_hash) = did_validate_and_check_integrity(&update_profile.did, true)?;
 
     let profile_links = get_latest_link(
         did_hash.clone(),
@@ -82,7 +84,14 @@ pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
 
 pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
     //Validate did
-    let (_did, did_hash) = did_validate_and_check_integrity(&did.0)?;
+    Uri::from_str(&did.0).map_err(|did_err| err(format!("{}", did_err.kind()).as_ref()))?;
+
+    //Check that did is not already in the DHT
+    let did = Did(did.0);
+    let did_hash = hash_entry(&did)?;
+    if get(did_hash.clone(), GetOptions)?.is_none() {
+        return Ok(None)
+    };
 
     let profile_links = get_latest_link(
         did_hash,
@@ -103,7 +112,7 @@ pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
 
 pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
     //Validate did
-    let (did, did_hash) = did_validate_and_check_integrity(&register_did.did)?;
+    let (did, did_hash) = did_validate_and_check_integrity(&register_did.did, false)?;
 
     //Validate incoming did document and its signed agent fields
     validate_did_doc(&register_did.did_document)?;
@@ -127,5 +136,8 @@ pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
 }
 
 pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
+    //Validate did
+    let (did, did_hash) = did_validate_and_check_integrity(&add_profile.did, false)?;
+
     Ok(())
 }
