@@ -137,7 +137,19 @@ pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
 
 pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
     //Validate did
-    let (did, did_hash) = did_validate_and_check_integrity(&add_profile.did, false)?;
+    let (_did, did_hash) = did_validate_and_check_integrity(&add_profile.did, true)?;
+
+    //Add profile entry
+    let did_profile = Profile(add_profile.profile);
+    let did_profile_hash = hash_entry(&did_profile)?;
+    create_entry(&did_profile)?;
+
+    //Link profile entry to did
+    create_link(
+        did_hash,
+        did_profile_hash,
+        LinkTag::from("profile".as_bytes().to_owned()),
+    )?;
 
     Ok(())
 }
