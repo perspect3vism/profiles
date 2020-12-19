@@ -76,3 +76,30 @@ pub fn validate_did_doc(did_document: &Document) -> ExternResult<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test_sigs {
+    #[test]
+    fn ed25519_pub_key_convertion() {
+        //b58 decode to bytes
+        let pub_key_decoded =
+            bs58::decode("2SCkHJrXx1bfrABgf8phThpM5PFdq9Mf9PRrByaY2mtf").into_vec();
+        assert_eq!(pub_key_decoded.is_ok(), true);
+        //Try and create Ed25519 from this
+        let pub_key = ed25519_dalek::PublicKey::from_bytes(&pub_key_decoded.unwrap());
+        println!("{:?}", pub_key);
+        assert_eq!(pub_key.is_ok(), true);
+    }
+
+    #[test]
+    fn ecdsasecp256k1_pub_key_convertion() {
+        //hex to bytes
+        let pub_key_decoded = hex::decode(String::from(
+            "033a6892d7dea6ce4ddc59d3d07f094e52b7c56763a0c07b74a0fff3a5c0c136ad",
+        ));
+        assert_eq!(pub_key_decoded.is_ok(), true);
+        //Try and create secp256 key from this
+        let pub_key = secp256k1::PublicKey::from_slice(&pub_key_decoded.unwrap());
+        assert_eq!(pub_key.is_ok(), true);
+    }
+}

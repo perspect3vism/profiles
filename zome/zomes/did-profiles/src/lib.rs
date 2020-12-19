@@ -99,5 +99,5 @@ pub struct AddProfile {
 /// Add a profile on already existing DID
 #[hdk_extern]
 pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
-    Ok(())
+    profile::add_profile(add_profile)
 }
