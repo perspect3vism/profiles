@@ -3,25 +3,17 @@ use did_doc::{
     Uri,
 };
 use ed25519_dalek::Verifier;
+use hc_utils::{get_header, get_latest_link};
 use hdk3::prelude::*;
 use secp256k1::Secp256k1;
 use std::str::FromStr;
 
-use crate::utils::err;
-use crate::{AddProfile, CreateProfileInput, DidInput, RegisterDidInput, UpdateProfileInput, DidDocument, Did, Profile};
+use crate::utils::{did_validate_and_check_integrity, err};
+use crate::{CreateProfileInput, DidDocument, Profile, UpdateProfileInput};
 
 pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
-    //Check that did is of valid syntax
-    Uri::from_str(&create_data.did)
-        .map_err(|did_err| err(format!("{}", did_err.kind()).as_ref()))?;
-
-    //Check that did is not already in the DHT
-    let did = Did(create_data.did);
-    let did_hash = hash_entry(&did)?;
-    let did_check = get(did_hash.clone(), GetOptions)?;
-    if did_check.is_none() {
-        return Err(err("Did already exists please add profile using the add_profile function"))
-    };
+    //Validate did
+    let (did, did_hash) = did_validate_and_check_integrity(&create_data.did)?;
 
     //Look for pub keys are of the type and encoding that we support (Ed25519VerificationKey2018 base58 & EcdsaSecp256k1VerificationKey2019 hex)
     let pub_key = create_data.did_document.public_key().iter().find(|key| {
@@ -102,17 +94,47 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     create_entry(&did_doc)?;
 
     //Link document entry to did
-    create_link(did_hash.clone(), did_doc_hash, LinkTag::from("doc".as_bytes().to_owned()))?;
+    create_link(
+        did_hash.clone(),
+        did_doc_hash,
+        LinkTag::from("doc".as_bytes().to_owned()),
+    )?;
 
     //Add profile entry
     let did_profile = Profile(create_data.profile);
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
-    
+
     //Link profile entry to did
-    create_link(did_hash, did_profile_hash, LinkTag::from("profile".as_bytes().to_owned()))?;
+    create_link(
+        did_hash,
+        did_profile_hash,
+        LinkTag::from("profile".as_bytes().to_owned()),
+    )?;
 
     Ok(())
+}
+
+pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
+    //Validate did
+    let (_did, did_hash) = did_validate_and_check_integrity(&update_profile.did)?;
+
+    let profile_links = get_latest_link(
+        did_hash,
+        Some(LinkTag::from("profile".as_bytes().to_owned())),
+    )
+    .map_err(|error| err(format!("{}", error).as_ref()))?;
+
+    match profile_links {
+        Some(links) => {
+            update_entry(
+                get_header(links.target).map_err(|error| err(format!("{}", error).as_ref()))?,
+                &Profile(update_profile.profile),
+            )?;
+            Ok(())
+        }
+        None => Err(err("You have no profile to update")),
+    }
 }
 
 #[cfg(test)]

@@ -62,7 +62,7 @@ pub struct UpdateProfileInput {
 /// Update profile for a given DID
 #[hdk_extern]
 pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
-    Ok(())
+    profile::update_profile(update_profile)
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes)]
