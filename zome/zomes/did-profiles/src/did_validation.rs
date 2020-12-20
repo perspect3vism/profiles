@@ -4,8 +4,6 @@ use did_doc::{
 };
 use ed25519_dalek::Verifier;
 use hdk3::prelude::*;
-use secp256k1::Secp256k1;
-use std::str::FromStr;
 
 use crate::utils::err;
 
@@ -31,21 +29,21 @@ pub fn validate_did_doc(did_document: &Document) -> ExternResult<()> {
         PublicKeyType::EcdsaSecp256k1VerificationKey2019 => {
             //Get the pub key ready
             let pub_key_decoded = hex::decode(pub_key.data());
-            let pub_key = secp256k1::PublicKey::from_slice(&pub_key_decoded.unwrap())
+            let pub_key = secp256k1::PublicKey::parse_slice(&pub_key_decoded.unwrap(), None)
                 .map_err(|_| err("Could not create scep256 pub key from did document data"))?;
 
             //Verify the sig
-            let secp = Secp256k1::verification_only();
-            secp.verify(
-                &secp256k1::Message::from_slice(&agent_bytes)
+            if !secp256k1::verify(
+                &secp256k1::Message::parse_slice(&agent_bytes)
                     .map_err(|_| err("Error converting agent bytes to secp message"))?,
-                &secp256k1::Signature::from_str(
-                    &did_document.extra.get("signed_agent").unwrap().to_string(),
+                &secp256k1::Signature::parse_slice(
+                    &did_document.extra.get("signed_agent").unwrap().to_string().as_bytes(),
                 )
                 .map_err(|_| err("Could not convert signed_agent data to scep signature"))?,
                 &pub_key,
-            )
-            .map_err(|_| err("Signed agent is not valid"))?;
+            ) {
+                return Err(err("Signature is invalid"))
+            };
         }
         PublicKeyType::Ed25519VerificationKey2018 => {
             //Get the pub key ready
@@ -99,7 +97,7 @@ mod test_sigs {
         ));
         assert_eq!(pub_key_decoded.is_ok(), true);
         //Try and create secp256 key from this
-        let pub_key = secp256k1::PublicKey::from_slice(&pub_key_decoded.unwrap());
+        let pub_key = secp256k1::PublicKey::parse_slice(&pub_key_decoded.unwrap(), None);
         assert_eq!(pub_key.is_ok(), true);
     }
 }
