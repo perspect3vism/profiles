@@ -45,7 +45,7 @@ pub fn who_am_i(_: ()) -> ExternResult<WrappedAgentPubKey> {
 #[derive(Serialize, Deserialize, SerializedBytes)]
 pub struct CreateProfileInput {
     pub did: String,
-    pub did_document: Document,
+    pub signed_agent: String,
     pub profile: BTreeMap<String, String>,
 }
 
