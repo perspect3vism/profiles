@@ -120,7 +120,7 @@ fn prefix_path(username: String) -> Path {
 fn get_agent_profile_from_link(link: Link) -> ExternResult<AgentProfile> {
     let profile_hash = link.target;
 
-    let element = get(profile_hash, GetOptions)?.ok_or(crate::err("could not get profile"))?;
+    let element = get(profile_hash, GetOptions::default())?.ok_or(crate::err("could not get profile"))?;
 
     let author = element.header().author().clone();
 

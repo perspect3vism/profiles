@@ -5,6 +5,9 @@
   "zomes": {
     "profiles": {
       "wasm_path": "../target/wasm32-unknown-unknown/release/profiles.wasm"
+    },
+    "did-profiles": {
+      "wasm_path": "../target/wasm32-unknown-unknown/release/did_profiles.wasm"
     }
   }
 }

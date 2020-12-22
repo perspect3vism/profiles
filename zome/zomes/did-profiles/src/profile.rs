@@ -100,7 +100,7 @@ pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
 
     match profile_links {
         Some(link) => {
-            let entry = get_latest_entry(link.target, GetOptions)
+            let entry = get_latest_entry(link.target, GetOptions::default())
                 .map_err(|error| err(format!("{}", error).as_ref()))?;
 
             Ok(Some(try_from_entry::<Profile>(entry)?))

@@ -22,7 +22,7 @@ pub fn did_validate_and_check_integrity(
     //Check for did in DHT
     let did = Did(did.clone());
     let did_hash = hash_entry(&did)?;
-    let did_check = get(did_hash.clone(), GetOptions)?;
+    let did_check = get(did_hash.clone(), GetOptions::default())?;
 
     if should_exist {
         if did_check.is_some() {
