@@ -1,0 +1,8 @@
+---
+manifest_version: 1
+name: "agent-profiles"
+uuid: 00000000-0000-0000-0000-000000000000
+properties: {}
+zomes: 
+  - name: did-profiles
+    bundled: ../target/wasm32-unknown-unknown/release/did_profiles.wasm
