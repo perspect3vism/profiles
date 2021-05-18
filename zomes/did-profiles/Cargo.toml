@@ -18,5 +18,4 @@ hex = "0.4.2"
 bs58 = "0.4.0"
 
 hdk = "0.0.100"
-holo_hash = "0.0.2-alpha.1"
 hc_utils = {git = "https://github.com/holochain/hc-utils", branch = "develop"}

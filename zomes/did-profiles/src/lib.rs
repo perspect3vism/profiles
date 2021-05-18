@@ -14,8 +14,11 @@ use hdk::prelude::*;
 use std::collections::BTreeMap;
 
 mod did_validation;
+mod output;
 mod profile;
 mod utils;
+
+use output::*;
 
 #[hdk_entry(id = "did", visibility = "public")]
 #[derive(Clone)]
@@ -26,7 +29,7 @@ pub struct DidDocument(Document);
 
 #[hdk_entry(id = "profile", visibility = "public")]
 #[derive(Clone)]
-pub struct Profile(BTreeMap<String, String>);
+pub struct Profile(BTreeMap<String, String>, BTreeMap<String, String>);
 
 entry_defs![
     Did::entry_def(),
@@ -47,6 +50,8 @@ pub struct CreateProfileInput {
     pub did: String,
     pub signed_agent: String,
     pub profile: BTreeMap<String, String>,
+    #[serde(rename(serialize = "@context", deserialize = "@context"))]
+    pub context: BTreeMap<String, String>,
 }
 
 /// Create a profile given DID
@@ -60,6 +65,8 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<CreatePro
 pub struct UpdateProfileInput {
     pub did: String,
     pub profile: BTreeMap<String, String>,
+    #[serde(rename(serialize = "@context", deserialize = "@context"))]
+    pub context: BTreeMap<String, String>,
 }
 
 /// Update profile for a given DID
@@ -71,13 +78,15 @@ pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 pub struct DidInput(String);
 
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
-pub struct GetProfileOutput(Option<BTreeMap<String, String>>);
-
 /// Get the profiles for a given DID
 #[hdk_extern]
-pub fn get_profile(did: DidInput) -> ExternResult<GetProfileOutput> {
-    Ok(GetProfileOutput(profile::get_profile(did)?.map(|p| p.0)))
+pub fn get_profile(did: DidInput) -> ExternResult<GetProfileResponse> {
+    Ok(GetProfileResponse(profile::get_profile(did)?.map(|p| {
+        ContextProfileResponse {
+            context: p.0,
+            profile_data: p.1,
+        }
+    })))
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
@@ -96,6 +105,8 @@ pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
 pub struct AddProfile {
     pub did: String,
     pub profile: BTreeMap<String, String>,
+    #[serde(rename(serialize = "@context", deserialize = "@context"))]
+    pub context: BTreeMap<String, String>,
 }
 
 /// Add a profile on already existing DID

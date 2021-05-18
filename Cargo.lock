@@ -248,7 +248,6 @@ dependencies = [
  "hc_utils",
  "hdk",
  "hex",
- "holo_hash",
  "libsecp256k1",
  "serde",
 ]

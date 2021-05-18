@@ -6,8 +6,8 @@ use std::str::FromStr;
 use crate::did_validation::validate_did_doc;
 use crate::utils::{did_validate_and_check_integrity, err, try_from_entry};
 use crate::{
-    AddProfile, CreateProfileInput, DidDocument, DidInput, Profile, RegisterDidInput,
-    UpdateProfileInput, Did
+    AddProfile, CreateProfileInput, Did, DidDocument, DidInput, Profile, RegisterDidInput,
+    UpdateProfileInput,
 };
 
 pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
@@ -15,12 +15,12 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     let (did, did_hash) = did_validate_and_check_integrity(&create_data.did, false)?;
 
     //Resolve did document from trusted did resolver DHT
-    //Validate resolved did document and that the signed_agent field received by this function was signed by key in did 
+    //Validate resolved did document and that the signed_agent field received by this function was signed by key in did
     //validate_did_doc(&create_data.did_document)?;
 
     //Add signed_agent field to did document
 
-    //Add document entry; we commit this first so the did document can be used as the proof of did ownership for this agent 
+    //Add document entry; we commit this first so the did document can be used as the proof of did ownership for this agent
     // let did_doc = DidDocument(create_data.did_document);
     // let did_doc_hash = hash_entry(&did_doc)?;
     // create_entry(&did_doc)?;
@@ -39,7 +39,7 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     // )?;
 
     //Add profile entry
-    let did_profile = Profile(create_data.profile);
+    let did_profile = Profile(create_data.context, create_data.profile);
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
 
@@ -67,13 +67,13 @@ pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
         Some(links) => {
             update_entry(
                 get_header(links.target).map_err(|error| err(format!("{}", error).as_ref()))?,
-                &Profile(update_profile.profile),
+                &Profile(update_profile.context, update_profile.profile),
             )?;
         }
         //No profile exists so we will just create one here
         None => {
             //Add profile entry
-            let did_profile = Profile(update_profile.profile);
+            let did_profile = Profile(update_profile.context, update_profile.profile);
             let did_profile_hash = hash_entry(&did_profile)?;
             create_entry(&did_profile)?;
 
@@ -139,7 +139,7 @@ pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
     let (_did, did_hash) = did_validate_and_check_integrity(&add_profile.did, true)?;
 
     //Add profile entry
-    let did_profile = Profile(add_profile.profile);
+    let did_profile = Profile(add_profile.context, add_profile.profile);
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
 

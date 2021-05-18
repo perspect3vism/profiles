@@ -37,12 +37,17 @@ pub fn validate_did_doc(did_document: &Document) -> ExternResult<()> {
                 &secp256k1::Message::parse_slice(&agent_bytes)
                     .map_err(|_| err("Error converting agent bytes to secp message"))?,
                 &secp256k1::Signature::parse_slice(
-                    &did_document.extra.get("signed_agent").unwrap().to_string().as_bytes(),
+                    &did_document
+                        .extra
+                        .get("signed_agent")
+                        .unwrap()
+                        .to_string()
+                        .as_bytes(),
                 )
                 .map_err(|_| err("Could not convert signed_agent data to scep signature"))?,
                 &pub_key,
             ) {
-                return Err(err("Signature is invalid"))
+                return Err(err("Signature is invalid"));
             };
         }
         PublicKeyType::Ed25519VerificationKey2018 => {

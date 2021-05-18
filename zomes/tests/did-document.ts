@@ -166,4 +166,4 @@ const did_docuemnt_ed25519 = {
     "signed_agent": ""
 };
 
-export { did_document };
+export { did_document_secp256k1 };
