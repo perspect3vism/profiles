@@ -28,11 +28,17 @@ orchestrator.registerScenario("create a profile and get it", async (s, t) => {
         "did-profiles",
         "create_profile",
         {
-          did: "did:elem:EiAS3mqC4OLMKOwcz3ItIL7XfWduPT7q3Fa4vHgiCfSG2A", 
-          signed_agent: "asignedagent", 
-          profile: {"@type": "foaf:OnlineAccount", "foaf:AccountName": "Alice"}, 
-          "@context": {"foaf": "http://xmlns.com/foaf/0.1/"},
-          proof: {signature: "sig", key: "key"}
+          author: { did: 'did:key:zQ3shNgAH1yUW21P5se2jnkRW1PtoyaS8SrGRr8LBhLJw1SY7' },
+          timestamp: '2021-05-19T14:04:02.366Z',
+          data: {
+            '@context': {"foaf": "http://xmlns.com/foaf/0.1/"},
+            profile: { 'foaf:AccountName': 'Alice', '@type': 'foaf:OnlineAccount' },
+            signed_agent: 'NA'
+          },
+          proof: {
+            key: '#zQ3shNgAH1yUW21P5se2jnkRW1PtoyaS8SrGRr8LBhLJw1SY7',
+            signature: 'cdfc9802db7213255f04f581b089334fe171fe6bee2ee9d21a71b3d8bac974cc56059bdb07619e319b9d782edc224be80655c8f3b7c994f1a0e6e300dc3ee679'
+          }
         }
     );
     t.ok(createProfile);
@@ -40,11 +46,11 @@ orchestrator.registerScenario("create a profile and get it", async (s, t) => {
     let getProfile = await alice_profiles.cells[0].call(
       "did-profiles",
       "get_profile",
-      "did:elem:EiAS3mqC4OLMKOwcz3ItIL7XfWduPT7q3Fa4vHgiCfSG2A"
+      "did:key:zQ3shNgAH1yUW21P5se2jnkRW1PtoyaS8SrGRr8LBhLJw1SY7"
     );
     console.log("Got did profile", getProfile);
     t.ok(getProfile);
-    t.equal(getProfile["foaf:AccountName"], "Alice");
+    t.equal(getProfile["data"]["profile"]["foaf:AccountName"], "Alice");
 
     // //Test creating a profile with ed25519
     // let createProfileBob = await bob_profiles.cells[0].call(

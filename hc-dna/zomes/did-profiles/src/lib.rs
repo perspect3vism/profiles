@@ -8,16 +8,16 @@
 //! Note: a solution for this does exist. Solution involves having another network where a trusted node has some capacities built into its holochain execution sandbox such that it can resolve did's.
 //! This network could be bridged and called to validate the integrity of any did subject/document pairs. TODO in the future.
 
-use did_doc::Document;
 use hdk::prelude::*;
-use std::collections::BTreeMap;
+use chrono::{DateTime, Utc};
+use did_doc::Document;
 
 mod did_validation;
-mod output;
 mod profile;
 mod utils;
+mod input;
 
-use output::*;
+use input::*;
 
 #[hdk_entry(id = "did", visibility = "public")]
 #[derive(Clone)]
@@ -28,7 +28,11 @@ pub struct DidDocument(Document);
 
 #[hdk_entry(id = "profile", visibility = "public")]
 #[derive(Clone)]
-pub struct Profile(BTreeMap<String, String>, BTreeMap<String, String>, ExpressionProof, DateTime<Utc>);
+pub struct Profile {
+    pub data: ExpressionData,
+    pub proof: ExpressionProof,
+    pub timestamp: DateTime<Utc>,
+}
 
 entry_defs![
     Did::entry_def(),
@@ -36,65 +40,17 @@ entry_defs![
     Profile::entry_def()
 ];
 
-
-#[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
-pub struct CreateProfileInput {
-    pub did: String,
-    pub signed_agent: String,
-    pub profile: BTreeMap<String, String>,
-    #[serde(rename(serialize = "@context", deserialize = "@context"))]
-    pub context: BTreeMap<String, String>,
-    pub proof: ExpressionProof,
-}
-
-#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
-pub struct ExpressionProof {
-    pub signature: String,
-    pub key: String,
-}
-
 /// Create a profile given DID
 #[hdk_extern]
-pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<CreateProfileInput> {
+pub fn create_profile(create_data: ProfileInput) -> ExternResult<ProfileInput> {
     profile::create_profile(create_data.clone())?;
     Ok(create_data)
 }
 
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
-pub struct UpdateProfileInput {
-    pub did: String,
-    pub profile: BTreeMap<String, String>,
-    #[serde(rename(serialize = "@context", deserialize = "@context"))]
-    pub context: BTreeMap<String, String>,
-    pub proof: ExpressionProof,
-}
-
-/// Update profile for a given DID
-#[hdk_extern]
-pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
-    profile::update_profile(update_profile)
-}
-
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
-pub struct DidInput(String);
-
 /// Get the profiles for a given DID
 #[hdk_extern]
-pub fn get_profile(did: DidInput) -> ExternResult<GetProfileResponse> {
-    Ok(GetProfileResponse(profile::get_profile(did)?.map(|p| {
-        ContextProfileResponse {
-            context: p.0,
-            profile_data: p.1,
-            proof: p.2,
-            timestamp: p.3
-        }
-    })))
-}
-
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
-pub struct RegisterDidInput {
-    pub did: String,
-    pub did_document: Document,
+pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
+    Ok(profile::get_profile(did)?)
 }
 
 /// Register a DID in the DHT
@@ -103,17 +59,9 @@ pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
     profile::register_did(register_did)
 }
 
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
-pub struct AddProfile {
-    pub did: String,
-    pub profile: BTreeMap<String, String>,
-    #[serde(rename(serialize = "@context", deserialize = "@context"))]
-    pub context: BTreeMap<String, String>,
-}
-
 /// Add a profile on already existing DID
 #[hdk_extern]
-pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
+pub fn add_profile(add_profile: ProfileInput) -> ExternResult<()> {
     profile::add_profile(add_profile)
 }
 

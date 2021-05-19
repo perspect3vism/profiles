@@ -1,18 +1,16 @@
 use did_doc::Uri;
-use hc_utils::{get_header, get_latest_entry, get_latest_link};
 use hdk::prelude::*;
 use std::str::FromStr;
 
 use crate::did_validation::validate_did_doc;
-use crate::utils::{did_validate_and_check_integrity, err, try_from_entry};
+use crate::utils::{did_validate_and_check_integrity, err};
 use crate::{
-    AddProfile, CreateProfileInput, Did, DidDocument, DidInput, Profile, RegisterDidInput,
-    UpdateProfileInput,
+    ProfileInput, Did, DidDocument, DidInput, Profile, RegisterDidInput,
 };
 
-pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
+pub fn create_profile(create_data: ProfileInput) -> ExternResult<()> {
     //Validate did
-    let (did, did_hash) = did_validate_and_check_integrity(&create_data.did, false)?;
+    let (did, did_hash) = did_validate_and_check_integrity(&create_data.author.did, false)?;
 
     //Resolve did document from trusted did resolver DHT
     //Validate resolved did document and that the signed_agent field received by this function was signed by key in did
@@ -39,12 +37,11 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     // )?;
 
     //Add profile entry
-    let now = sys_time()?;
-    let now = DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
-        Utc,
-    );
-    let did_profile = Profile(create_data.context, create_data.profile, create_data.proof, now);
+    let did_profile = Profile{
+        data: create_data.data,
+        proof: create_data.proof,
+        timestamp: create_data.timestamp
+    };
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
 
@@ -55,46 +52,6 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
         LinkTag::from("profile".as_bytes().to_owned()),
     )?;
 
-    Ok(())
-}
-
-pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
-    //Validate did
-    let (_did, did_hash) = did_validate_and_check_integrity(&update_profile.did, true)?;
-
-    let profile_links = get_latest_link(
-        did_hash.clone(),
-        Some(LinkTag::from("profile".as_bytes().to_owned())),
-    )
-    .map_err(|error| err(format!("{}", error).as_ref()))?;
-
-    let now = sys_time()?;
-    let now = DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
-        Utc,
-    );
-    match profile_links {
-        Some(links) => {
-            update_entry(
-                get_header(links.target).map_err(|error| err(format!("{}", error).as_ref()))?,
-                &Profile(update_profile.context, update_profile.profile, update_profile.proof, now),
-            )?;
-        }
-        //No profile exists so we will just create one here
-        None => {
-            //Add profile entry
-            let did_profile = Profile(update_profile.context, update_profile.profile, update_profile.proof, now);
-            let did_profile_hash = hash_entry(&did_profile)?;
-            create_entry(&did_profile)?;
-
-            //Link profile entry to did
-            create_link(
-                did_hash,
-                did_profile_hash,
-                LinkTag::from("profile".as_bytes().to_owned()),
-            )?;
-        }
-    };
     Ok(())
 }
 
@@ -110,10 +67,19 @@ pub fn get_profile(did: DidInput) -> ExternResult<Option<Profile>> {
 
     match profile_links {
         Some(link) => {
-            let entry = get_latest_entry(link.target, GetOptions::default())
-                .map_err(|error| err(format!("{}", error).as_ref()))?;
-
-            Ok(Some(try_from_entry::<Profile>(entry)?))
+            match get(link.target, GetOptions::default())
+                .map_err(|error| err(format!("{}", error).as_ref()))? {
+                    Some(elem) => {
+                        let exp_data: Profile = elem
+                            .entry()
+                            .to_app_option()?
+                            .ok_or(WasmError::Host(String::from(
+                                "Could not deserialize link expression data into Profile type",
+                            )))?;
+                        Ok(Some(exp_data))
+                    },
+                    None => Ok(None)
+                }
         }
         None => Ok(None),
     }
@@ -144,17 +110,16 @@ pub fn register_did(register_did: RegisterDidInput) -> ExternResult<()> {
     Ok(())
 }
 
-pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
+pub fn add_profile(add_profile: ProfileInput) -> ExternResult<()> {
     //Validate did
-    let (_did, did_hash) = did_validate_and_check_integrity(&add_profile.did, true)?;
+    let (_did, did_hash) = did_validate_and_check_integrity(&add_profile.author.did, true)?;
 
     //Add profile entry
-    let now = sys_time()?;
-    let now = DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
-        Utc,
-    );
-    let did_profile = Profile(add_profile.context, add_profile.profile, update_profile.proof, now);
+    let did_profile = Profile{
+        data: add_profile.data,
+        proof: add_profile.proof,
+        timestamp: add_profile.timestamp
+    };
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
 
@@ -166,4 +131,24 @@ pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
     )?;
 
     Ok(())
+}
+
+fn get_latest_link(base: EntryHash, tag: Option<LinkTag>) -> ExternResult<Option<Link>> {
+    let profile_info = get_links(base.into(), tag)?.into_inner();
+
+    // Find the latest
+    let latest_info =
+        profile_info
+            .into_iter()
+            .fold(None, |latest: Option<Link>, link| match latest {
+                Some(latest) => {
+                    if link.timestamp > latest.timestamp {
+                        Some(link)
+                    } else {
+                        Some(latest)
+                    }
+                }
+                None => Some(link),
+            });
+    return Ok(latest_info);
 }

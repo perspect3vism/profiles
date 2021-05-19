@@ -4,10 +4,6 @@ use std::str::FromStr;
 
 use crate::Did;
 
-pub fn error<T>(reason: &str) -> ExternResult<T> {
-    Err(err(reason))
-}
-
 pub fn err(reason: &str) -> WasmError {
     WasmError::Host(String::from(reason))
 }
@@ -38,15 +34,5 @@ pub fn did_validate_and_check_integrity(
                 "Given did already exists in the DHT. Expected a unique DID.",
             ))
         }
-    }
-}
-
-pub fn try_from_entry<T: TryFrom<SerializedBytes>>(entry: Entry) -> ExternResult<T> {
-    match entry {
-        Entry::App(content) => match T::try_from(content.into_sb()) {
-            Ok(e) => Ok(e),
-            Err(_) => error("Could not convert entry"),
-        },
-        _ => error("Could not convert entry"),
     }
 }

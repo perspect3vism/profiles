@@ -16,6 +16,6 @@ libsecp256k1 = "0.3.5"
 ed25519-dalek = "1.0.1"
 hex = "0.4.2"
 bs58 = "0.4.0"
+chrono = {version = "0.4.19", features = ["serde"] }
 
-hdk = "0.0.100"
-hc_utils = {git = "https://github.com/holochain/hc-utils", branch = "develop"}
+hdk = { git = "https://github.com/holochain/holochain", rev = "a6ac04396" }
