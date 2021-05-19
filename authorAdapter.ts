@@ -27,7 +27,7 @@ export default class ProfileAuthorAdapter implements GetByAuthorAdapter {
       "get_profile",
       author.did
     );
-    if (res != null) {
+    if (expression != null) {
       var cloneRes = Object.assign({}, expression);
       delete cloneRes.proof;
       delete cloneRes.timestamp;
