@@ -21,23 +21,25 @@ export default class ProfileAuthorAdapter implements GetByAuthorAdapter {
     page: number
   ): Promise<void | Expression[]> {
     //TODO: resolve did
-    const res = await this.#DNA.call(
+    const expression = await this.#DNA.call(
       DNA_NICK,
       "did-profiles",
       "get_profile",
       author.did
     );
     if (res != null) {
-      var cloneRes = Object.assign({}, res);
+      var cloneRes = Object.assign({}, expression);
       delete cloneRes.proof;
       delete cloneRes.timestamp;
-      let expression: Expression = {
-        author: author,
-        proof: res.proof,
-        timestamp: res.timestamp,
-        data: cloneRes
+      let ad4mExpression: Expression = {
+        author: {
+          did: author.did,
+        } as Agent,
+        proof: expression.proof,
+        timestamp: expression.timestamp,
+        data: cloneRes.data
       }
-      return [expression]
+      return [ad4mExpression]
     } else {
       return null
     }

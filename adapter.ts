@@ -66,7 +66,7 @@ export default class ProfileAdapter implements ExpressionAdapter {
         } as Agent,
         proof: expression.proof,
         timestamp: expression.timestamp,
-        data: cloneRes
+        data: cloneRes.data
       }
       return ad4mExpression
     } else {
