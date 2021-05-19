@@ -39,7 +39,12 @@ pub fn create_profile(create_data: CreateProfileInput) -> ExternResult<()> {
     // )?;
 
     //Add profile entry
-    let did_profile = Profile(create_data.context, create_data.profile);
+    let now = sys_time()?;
+    let now = DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+        Utc,
+    );
+    let did_profile = Profile(create_data.context, create_data.profile, create_data.proof, now);
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
 
@@ -63,17 +68,22 @@ pub fn update_profile(update_profile: UpdateProfileInput) -> ExternResult<()> {
     )
     .map_err(|error| err(format!("{}", error).as_ref()))?;
 
+    let now = sys_time()?;
+    let now = DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+        Utc,
+    );
     match profile_links {
         Some(links) => {
             update_entry(
                 get_header(links.target).map_err(|error| err(format!("{}", error).as_ref()))?,
-                &Profile(update_profile.context, update_profile.profile),
+                &Profile(update_profile.context, update_profile.profile, update_profile.proof, now),
             )?;
         }
         //No profile exists so we will just create one here
         None => {
             //Add profile entry
-            let did_profile = Profile(update_profile.context, update_profile.profile);
+            let did_profile = Profile(update_profile.context, update_profile.profile, update_profile.proof, now);
             let did_profile_hash = hash_entry(&did_profile)?;
             create_entry(&did_profile)?;
 
@@ -139,7 +149,12 @@ pub fn add_profile(add_profile: AddProfile) -> ExternResult<()> {
     let (_did, did_hash) = did_validate_and_check_integrity(&add_profile.did, true)?;
 
     //Add profile entry
-    let did_profile = Profile(add_profile.context, add_profile.profile);
+    let now = sys_time()?;
+    let now = DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(now.as_secs_f64() as i64, now.subsec_nanos()),
+        Utc,
+    );
+    let did_profile = Profile(add_profile.context, add_profile.profile, update_profile.proof, now);
     let did_profile_hash = hash_entry(&did_profile)?;
     create_entry(&did_profile)?;
 

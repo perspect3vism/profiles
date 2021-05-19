@@ -9,7 +9,6 @@
 //! This network could be bridged and called to validate the integrity of any did subject/document pairs. TODO in the future.
 
 use did_doc::Document;
-use hc_utils::WrappedAgentPubKey;
 use hdk::prelude::*;
 use std::collections::BTreeMap;
 
@@ -29,7 +28,7 @@ pub struct DidDocument(Document);
 
 #[hdk_entry(id = "profile", visibility = "public")]
 #[derive(Clone)]
-pub struct Profile(BTreeMap<String, String>, BTreeMap<String, String>);
+pub struct Profile(BTreeMap<String, String>, BTreeMap<String, String>, ExpressionProof, DateTime<Utc>);
 
 entry_defs![
     Did::entry_def(),
@@ -37,13 +36,6 @@ entry_defs![
     Profile::entry_def()
 ];
 
-/// Get agent information
-#[hdk_extern]
-pub fn who_am_i(_: ()) -> ExternResult<WrappedAgentPubKey> {
-    let agent_info = agent_info()?;
-
-    Ok(WrappedAgentPubKey(agent_info.agent_initial_pubkey))
-}
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 pub struct CreateProfileInput {
@@ -52,6 +44,13 @@ pub struct CreateProfileInput {
     pub profile: BTreeMap<String, String>,
     #[serde(rename(serialize = "@context", deserialize = "@context"))]
     pub context: BTreeMap<String, String>,
+    pub proof: ExpressionProof,
+}
+
+#[derive(Serialize, Deserialize, Clone, SerializedBytes, Debug)]
+pub struct ExpressionProof {
+    pub signature: String,
+    pub key: String,
 }
 
 /// Create a profile given DID
@@ -67,6 +66,7 @@ pub struct UpdateProfileInput {
     pub profile: BTreeMap<String, String>,
     #[serde(rename(serialize = "@context", deserialize = "@context"))]
     pub context: BTreeMap<String, String>,
+    pub proof: ExpressionProof,
 }
 
 /// Update profile for a given DID
@@ -85,6 +85,8 @@ pub fn get_profile(did: DidInput) -> ExternResult<GetProfileResponse> {
         ContextProfileResponse {
             context: p.0,
             profile_data: p.1,
+            proof: p.2,
+            timestamp: p.3
         }
     })))
 }

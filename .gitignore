@@ -2,3 +2,8 @@ target/
 node_modules/
 dist/
 .cargo
+*.js
+!dna.js
+!*icons.js
+!*config.js
+*.js.map

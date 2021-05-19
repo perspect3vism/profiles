@@ -27,7 +27,13 @@ orchestrator.registerScenario("create a profile and get it", async (s, t) => {
     let createProfile = await alice_profiles.cells[0].call(
         "did-profiles",
         "create_profile",
-        {did: "did:elem:EiAS3mqC4OLMKOwcz3ItIL7XfWduPT7q3Fa4vHgiCfSG2A", signed_agent: "asignedagent", profile: {"@type": "foaf:OnlineAccount", "foaf:AccountName": "Alice"}, "@context": {"foaf": "http://xmlns.com/foaf/0.1/"}}
+        {
+          did: "did:elem:EiAS3mqC4OLMKOwcz3ItIL7XfWduPT7q3Fa4vHgiCfSG2A", 
+          signed_agent: "asignedagent", 
+          profile: {"@type": "foaf:OnlineAccount", "foaf:AccountName": "Alice"}, 
+          "@context": {"foaf": "http://xmlns.com/foaf/0.1/"},
+          proof: {signature: "sig", key: "key"}
+        }
     );
     t.ok(createProfile);
 

@@ -245,7 +245,6 @@ dependencies = [
  "derive_more",
  "did_doc",
  "ed25519-dalek",
- "hc_utils",
  "hdk",
  "hex",
  "libsecp256k1",
@@ -379,17 +378,6 @@ name = "hashbrown"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
-
-[[package]]
-name = "hc_utils"
-version = "0.2.0"
-source = "git+https://github.com/holochain/hc-utils?branch=develop#7c9dd04786e6f99dee73ba44dfceae26ac79613d"
-dependencies = [
- "hdk",
- "holo_hash",
- "serde",
- "thiserror",
-]
 
 [[package]]
 name = "hdk"
