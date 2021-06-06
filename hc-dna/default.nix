@@ -13,6 +13,7 @@ let
      cargoSha256 = "0w29y8w5k5clq74k84ksj5aqxbxhqxh2djhll6vv694djw277rpj";
      bins = {
        hc = "hc";
+       holochain = "holochain";
      };
     };
   };
